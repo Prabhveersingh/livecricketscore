@@ -87,7 +87,7 @@ if page == "⚙️ Admin Panel":
     if not st.session_state["authenticated"]:
         pwd = st.text_input("Admin PIN", type="password")
         if st.button("Login"):
-            if pwd == "1234": st.session_state["authenticated"] = True; st.rerun()
+            if pwd == "sidhu-amg": st.session_state["authenticated"] = True; st.rerun()
     else:
         tab1, tab2 = st.tabs(["🏗️ Setup & Innings", "🏏 Match Control"])
         with tab1:
