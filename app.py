@@ -904,7 +904,7 @@ elif page == "📺 Live Match":
         
         with col_sq1:
             st.subheader(f"{batting_team} Squad")
-            batting_squad = data["team_a_squad"            batting_squad = data["team_a_squad"] if data["innings"] == 1 else data["team_b_squad"]
+            batting_squad = data["team_a_squad"] if data["innings"] == 1 else data["team_b_squad"]
             for player in batting_squad:
                 if player in data["out_players"]:
                     st.markdown(f"~~{player}~~ ❌")
