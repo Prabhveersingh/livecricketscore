@@ -495,7 +495,7 @@ if page == "⚙️ Admin Panel":
                             actual_runs = int(runs)
                             data["score"] += actual_runs
                             data["batting_stats"][striker]["r"] += actual_runs
-                                                 data["batting_stats"][striker]["b"] += 1
+                            data["batting_stats"][striker]["b"] += 1
                             if actual_runs == 4:
                                 data["batting_stats"][striker]["4s"] += 1
                                 add_match_event("FOUR", f"{striker} hits a FOUR! {actual_runs} runs", {})
