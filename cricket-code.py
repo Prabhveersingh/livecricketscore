@@ -264,12 +264,12 @@ def apply_custom_css():
         </style>
     """, unsafe_allow_html=True)
 # Check match end conditions
-                        if data["innings"] == 2:
-                            if data["score"] >= data["target"]:
-                                data["is_finished"] = True
-                                data["winner"] = data["team_b"]
-                                add_match_event("MATCH_END", f"{data['team_b']} wins by {10 - data['wickets']} wickets!", {})
-                                CricketDataManager.save_to_history(data)
+if data["innings"] == 2:
+    if data["score"] >= data["target"]:
+        data["is_finished"] = True
+        data["winner"] = data["team_b"]
+        add_match_event("MATCH_END", f"{data['team_b']} wins by {10 - data['wickets']} wickets!", {})
+        CricketDataManager.save_to_history(data)
                             elif data["wickets"] >= len(batting_team) - 1:  # All out
                                 data["is_finished"] = True
                                 data["winner"] = data["team_a"]
