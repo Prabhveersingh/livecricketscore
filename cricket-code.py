@@ -476,3 +476,270 @@ elif page == "📺 Live Match":
             {target_text}
         </div>
     """, unsafe_allow_html=True)
+# Get non-striker stats
+        non_striker_stats = data['batting_stats'].get(data['current_non_striker'], {})
+        non_striker_runs = non_striker_stats.get('r', 0)
+        non_striker_balls = non_striker_stats.get('b', 0)
+        non_striker_sr = round(non_striker_runs / non_striker_balls * 100, 2) if non_striker_balls > 0 else 0
+        
+        with col_p2:
+            st.markdown(f"""
+                <div class="player-box">
+                    <h3>🏃 Non-Striker</h3>
+                    <h2>{data['current_non_striker']}</h2>
+                    <p>{non_striker_runs} runs from {non_striker_balls} balls</p>
+                </div>
+            """, unsafe_allow_html=True)
+        
+        # Get bowler stats
+        bowler_stats = data['bowling_stats'].get(data['current_bowler'], {})
+        bowler_wickets = bowler_stats.get('w', 0)
+        bowler_runs = bowler_stats.get('r', 0)
+        bowler_balls = bowler_stats.get('balls', 0)
+        bowler_overs = round(bowler_balls / 6 + (bowler_balls % 6) / 10, 1)
+        
+        with col_p3:
+            st.markdown(f"""
+                <div class="player-box">
+                    <h3>🎯 Bowler</h3>
+                    <h2>{data['current_bowler']}</h2>
+                    <p>{bowler_wickets}/{bowler_runs} in {bowler_overs} overs</p>
+                </div>
+            """, unsafe_allow_html=True)
+        
+        with col_p4:
+            partnership = f"{data['partnership_runs']} ({data['partnership_balls']})"
+            st.markdown(f"""
+                <div class="player-box">
+                    <h3>🤝 Partnership</h3>
+                    <h2>{partnership}</h2>
+                </div>
+            """, unsafe_allow_html=True)
+    
+    # Run Rate Indicator for second innings
+    if data["innings"] == 2 and data["target"] > 0:
+        progress = min(100, (data["score"] / data["target"]) * 100)
+        st.markdown(f"""
+            <div class="run-rate-indicator">
+                <div class="run-rate-fill" style="width: {progress}%;"></div>
+            </div>
+            <p style='text-align: center;'>Progress towards target: {progress:.1f}%</p>
+        """, unsafe_allow_html=True)
+    
+    st.divider()
+    
+    # Detailed Stats Tabs
+    tab_match, tab_bat, tab_bowl, tab_squad, tab_commentary = st.tabs(["📊 Match Stats", "🏏 Batting", "🎯 Bowling", "👥 Squad", "📝 Commentary"])
+    
+    with tab_match:
+        col_info1, col_info2 = st.columns(2)
+        
+        with col_info1:
+            st.subheader("📋 Match Information")
+            info_data = {
+                "Teams": f"{data['team_a']} vs {data['team_b']}",
+                "Batting Team": f"{batting_team}",
+                "Overs Left": f"{data['max_overs'] - data['overs']:.1f}",
+                "Wickets in Hand": f"{10 - data['wickets']}",
+                "Current Run Rate": f"{data['run_rate']:.2f}",
+                "Extra Runs": f"{data['extras']}"
+            }
+            if data["innings"] == 2:
+                info_data["Target Score"] = f"{data['target']}"
+                info_data["Required Run Rate"] = f"{required_run_rate:.2f}"
+            
+            df_info = pd.DataFrame(info_data.items(), columns=["Match Details", "Value"])
+            st.table(df_info)
+        
+        with col_info2:
+            st.subheader("Recent Events")
+            if st.session_state["match_events"]:
+                for event in st.session_state["match_events"][-5:]:
+                    st.info(f"{event['time']} - {event['description']}")
+            else:
+                st.info("No recent events")
+    
+    with tab_bat:
+        st.subheader(f"🏏 {batting_team} - Batting Scorecard")
+        
+        batting_data = []
+        for player, stats in data["batting_stats"].items():
+            strike_rate = (stats["r"] / stats["b"] * 100) if stats["b"] > 0 else 0
+            batting_data.append({
+                "Batsman": player,
+                "R": stats["r"],
+                "B": stats["b"],
+                "4s": stats.get("4s", 0),
+                "6s": stats.get("6s", 0),
+                "SR": round(strike_rate, 2)
+            })
+if batting_data:
+            df_bat = pd.DataFrame(batting_data)
+            st.dataframe(df_bat, use_container_width=True)
+        else:
+            st.info("No batting data available")
+    
+    with tab_bowl:
+        st.subheader(f"🎯 {bowling_team} - Bowling Scorecard")
+        
+        bowling_data = []
+        for player, stats in data["bowling_stats"].items():
+            overs = stats["balls"] // 6 + (stats["balls"] % 6) / 10
+            economy = stats["r"] / overs if overs > 0 else 0
+            bowling_data.append({
+                "Bowler": player,
+                "O": round(overs, 1),
+                "M": stats.get("maidens", 0),
+                "R": stats["r"],
+                "W": stats["w"],
+                "Econ": round(economy, 2)
+            })
+        
+        if bowling_data:
+            bowl_df = pd.DataFrame(bowling_data)
+            st.dataframe(bowl_df, use_container_width=True)
+        else:
+            st.info("No bowling data available")
+    
+    with tab_squad:
+        col_sq1, col_sq2 = st.columns(2)
+        
+        with col_sq1:
+            st.subheader(f"{batting_team} Squad")
+            batting_squad = data["team_a_squad"] if data["innings"] == 1 else data["team_b_squad"]
+            for player in batting_squad:
+                if player in data["out_players"]:
+                    st.markdown(f"~~{player}~~ ❌")
+                elif player in [data["current_striker"], data["current_non_striker"]]:
+                    st.markdown(f"**{player}** 🏏 (Batting)")
+                else:
+                    st.write(f"• {player}")
+        
+        with col_sq2:
+            st.subheader(f"{bowling_team} Squad")
+            bowling_squad = data["team_b_squad"] if data["innings"] == 1 else data["team_a_squad"]
+            for player in bowling_squad:
+                if player == data["current_bowler"]:
+                    st.markdown(f"**{player}** 🎯 (Bowling)")
+                else:
+                    st.write(f"• {player}")
+    
+    with tab_commentary:
+        st.subheader("📝 Live Commentary")
+        if st.session_state["match_events"]:
+            for event in reversed(st.session_state["match_events"][-20:]):
+                if event["type"] == "WICKET":
+                    st.error(f"{event['time']} - {event['description']}")
+                elif event["type"] in ["FOUR", "SIX"]:
+                    st.success(f"{event['time']} - {event['description']}")
+                else:
+                    st.info(f"{event['time']} - {event['description']}")
+        else:
+            st.info("No commentary available")
+
+elif page == "📊 Statistics":
+    st.markdown("<div class='main-header'><h1>📊 Match Statistics</h1></div>", unsafe_allow_html=True)
+    
+    col_stat1, col_stat2 = st.columns(2)
+    
+    with col_stat1:
+        st.subheader("🏆 Highest Run Scorers")
+        if data["batting_stats"]:
+            top_batsmen = sorted(data["batting_stats"].items(), key=lambda x: x[1]["r"], reverse=True)[:5]
+            for player, stats in top_batsmen:
+                strike_rate = (stats['r'] / stats['b'] * 100) if stats['b'] > 0 else 0
+                st.metric(
+                    player, 
+                    f"{stats['r']} runs", 
+                    f"{stats['b']} balls, SR: {strike_rate:.1f}"
+                )
+        else:
+            st.info("No batting data")
+    
+    with col_stat2:
+        st.subheader("🎯 Best Bowlers")
+        if data["bowling_stats"]:
+            top_bowlers = sorted(data["bowling_stats"].items(), key=lambda x: x[1]["w"], reverse=True)[:5]
+            for player, stats in top_bowlers:
+                overs = stats['balls'] // 6 + (stats['balls'] % 6) / 10
+                economy = stats['r'] / overs if overs > 0 else 0
+                st.metric(
+                    player, 
+                    f"{stats['w']} wickets", 
+                    f"{stats['r']} runs, Econ: {economy:.1f}"
+                )
+        else:
+            st.info("No bowling data")
+    
+    # Match Summary
+    st.subheader("📊 Innings Summary")
+    summary_data = {
+        "Runs Scored": f"{data['score']}",
+        "Wickets Lost": f"{data['wickets']}",
+        "Overs Completed": f"{data['overs']:.1f}",
+        "Current Run Rate": f"{data['run_rate']:.2f}",
+        "Extras (Wd/Nb/Bye/Leg Bye)": f"{data['extras']}",
+        "Current Partnership": f"{data['partnership_runs']} runs ({data['partnership_balls']} balls)"
+    }
+    
+    df_summary = pd.DataFrame(summary_data.items(), columns=["Innings Stats", "Value"])
+    st.table(df_summary)
+    
+    # Ball-by-ball analysis
+    if st.session_state["ball_by_ball"]:
+        st.subheader("🎯 Ball by Ball Analysis")
+        ball_df = pd.DataFrame(st.session_state["ball_by_ball"])
+        st.dataframe(ball_df, use_container_width=True)
+
+elif page == "📜 History":
+    st.markdown("<div class='main-header'><h1>📜 Match History</h1></div>", unsafe_allow_html=True)
+    
+    match_history = CricketDataManager.load_history()
+    
+    if match_history:
+        for match in reversed(match_history[-10:]):  # Show last 10 matches
+            with st.expander(f"🏏 Match {match['match_id']}: {match['teams']} - {match['date']}"):
+                col_hist1, col_hist2 = st.columns(2)
+                
+                with col_hist1:
+                    st.success(f"**Winner:** {match['winner']}")
+                    st.info(f"**Final Score:** {match['score']}")
+                    st.info(f"**Man of the Match:** {match.get('man_of_match', 'TBD')}")
+                
+                with col_hist2:
+                    st.write("**Top Performers**")
+                    if match.get('batting_stats'):
+                        if match['batting_stats']:
+                            top_bat = max(match['batting_stats'], key=lambda x: x['runs'])
+                            st.write(f"🏏 Best Bat: {top_bat['player']} - {top_bat['runs']}({top_bat['balls']}) SR: {top_bat['strike_rate']}")
+                    
+                    if match.get('bowling_stats'):
+                        if match['bowling_stats']:
+                            top_bowl = max(match['bowling_stats'], key=lambda x: x['wickets'])
+                            st.write(f"🎯 Best Bowl: {top_bowl['player']} - {top_bowl['wickets']}/{top_bowl['runs']} Econ: {top_bowl['economy']}")
+                
+                # Detailed stats in tabs
+                tab_hist_bat, tab_hist_bowl = st.tabs(["Batting Details", "Bowling Details"])
+                
+                with tab_hist_bat:
+                    if match.get('batting_stats'):
+                        df_hist_bat = pd.DataFrame(match['batting_stats'])
+                        st.dataframe(df_hist_bat, use_container_width=True)
+                    else:
+                        st.info("No batting stats available")
+                
+                with tab_hist_bowl:
+                    if match.get('bowling_stats'):
+                        df_hist_bowl = pd.DataFrame(match['bowling_stats'])
+                        st.dataframe(df_hist_bowl, use_container_width=True)
+                    else:
+                        st.info("No bowling stats available")
+    else:
+        st.info("No match history available yet. Complete a match to see history!")
+
+# Auto-refresh for live match page
+if page == "📺 Live Match" and not data["is_finished"]:
+    if time.time() - st.session_state["last_update"] > 5:  # Refresh every 5 seconds
+        st.session_state["last_update"] = time.time()
+        time.sleep(0.1)  # Small delay to prevent multiple refreshes
+        st.rerun()
