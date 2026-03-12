@@ -265,26 +265,26 @@ def apply_custom_css():
     """, unsafe_allow_html=True)
 # Check match end conditions
 if data["innings"] == 2:
-    if data["score"] >= data["target"]:
-        data["is_finished"] = True
-        data["winner"] = data["team_b"]
-        add_match_event("MATCH_END", f"{data['team_b']} wins by {10 - data['wickets']} wickets!", {})
-        CricketDataManager.save_to_history(data)
-                            elif data["wickets"] >= len(batting_team) - 1:  # All out
-                                data["is_finished"] = True
-                                data["winner"] = data["team_a"]
-                                add_match_event("MATCH_END", f"{data['team_a']} wins by {data['target'] - data['score']} runs!", {})
-                                CricketDataManager.save_to_history(data)
-                            elif data["balls"] >= data["max_overs"] * 6:
-                                data["is_finished"] = True
-                                if data["score"] >= data["target"]:
-                                    data["winner"] = data["team_b"]
-                                else:
-                                    data["winner"] = data["team_a"]
-                                add_match_event("MATCH_END", f"{data['winner']} wins!", {})
-                                CricketDataManager.save_to_history(data)
+if data["score"] >= data["target"]:
+data["is_finished"] = True
+data["winner"] = data["team_b"]
+add_match_event("MATCH_END", f"{data['team_b']} wins by {10 - data['wickets']} wickets!", {})
+CricketDataManager.save_to_history(data)
+elif data["wickets"] >= len(batting_team) - 1:
+data["is_finished"] = True
+data["winner"] = data["team_a"]
+add_match_event("MATCH_END", f"{data['team_a']} wins by {data['target'] - data['score']} runs!", {})
+CricketDataManager.save_to_history(data)
+elif data["balls"] >= data["max_overs"] * 6:
+data["is_finished"] = True
+if data["score"] >= data["target"]:
+data["winner"] = data["team_b"]
+else:
+data["winner"] = data["team_a"]
+add_match_event("MATCH_END", f"{data['winner']} wins!", {})
+CricketDataManager.save_to_history(data)
                         
-                        # Update current players
+    # Update current players
                         data["current_striker"] = striker
                         data["current_non_striker"] = non_striker
                         data["current_bowler"] = bowler
